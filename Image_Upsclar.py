@@ -1,4 +1,5 @@
 import cv2
+import os 
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
@@ -9,10 +10,18 @@ def upscale_image(input_path, output_path, output_name, new_width, new_height):
         messagebox.showerror("Error", "Image not found.")
         return
 
-    upscaled_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
-    cv2.imwrite(f'{output_path}/{output_name}', upscaled_image)
-    messagebox.showinfo("Success", f"Image upscaled and saved to {output_path}/{output_name}")
+    # Extract the extension from the input file
+    _, ext = os.path.splitext(input_path)
+    if not ext:
+        messagebox.showerror("Error", "Invalid file extension.")
+        return
 
+    # Construct the full output path with the same extension as the input image
+    full_output_path = os.path.join(output_path, f"{output_name}{ext}")
+
+    upscaled_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+    cv2.imwrite(full_output_path, upscaled_image)
+    messagebox.showinfo("Success", f"Image upscaled and saved to {full_output_path}")
 def browse_file(entry):
     filename = filedialog.askopenfilename()
     entry.delete(0, tk.END)
