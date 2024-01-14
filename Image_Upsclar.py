@@ -1,90 +1,60 @@
+import cv2
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
-from PIL import Image
 
-def upscale_image(input_path, output_path, target_resolution):
-    try:
-        image = Image.open(input_path)
-        image = image.resize(target_resolution, Image.ANTIALIAS)
-        image.save(output_path)
-        result_label.config(text=f"Image upscaled and saved as '{output_path}'")
-    except FileNotFoundError:
-        result_label.config(text="Input file not found.")
-    except Exception as e:
-        result_label.config(text=f"An error occurred: {e}")
+def upscale_image(input_path, output_path, output_name, new_width, new_height):
+    image = cv2.imread(input_path)
+    if image is None:
+        messagebox.showerror("Error", "Image not found.")
+        return
 
-def browse_input_file():
-    file_path = filedialog.askopenfilename()
-    input_path_entry.delete(0, tk.END)
-    input_path_entry.insert(0, file_path)
+    upscaled_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+    cv2.imwrite(f'{output_path}/{output_name}', upscaled_image)
+    messagebox.showinfo("Success", f"Image upscaled and saved to {output_path}/{output_name}")
 
-def browse_output_directory():
-    output_directory = filedialog.askdirectory()
-    output_path_entry.delete(0, tk.END)
-    output_path_entry.insert(0, output_directory)
+def browse_file(entry):
+    filename = filedialog.askopenfilename()
+    entry.delete(0, tk.END)
+    entry.insert(0, filename)
 
-def upscale_button_clicked():
-    input_path = input_path_entry.get()
-    output_directory = output_path_entry.get()
-    output_name = output_name_entry.get()
-    try:
-        width = int(target_width_entry.get())
-        height = int(target_height_entry.get())
-        target_resolution = (width, height)
-        if not output_name:
-            result_label.config(text="Please enter a valid output name.")
-            return
-        output_path = f"{output_directory}/{output_name}"
-        upscale_image(input_path, output_path, target_resolution)
-        # Clear input fields
-        input_path_entry.delete(0, tk.END)
-        output_name_entry.delete(0, tk.END)
-        result_label.after(5000, clear_result)  # Clear result message after 5 seconds
-    except ValueError:
-        result_label.config(text="Invalid target resolution!")
+def browse_folder(entry):
+    foldername = filedialog.askdirectory()
+    entry.delete(0, tk.END)
+    entry.insert(0, foldername)
 
-def clear_result():
-    result_label.config(text="")
-
-# Create the main window
 root = tk.Tk()
 root.title("Image Upscaler")
 
-# Create and pack GUI elements
-input_label = tk.Label(root, text="Input Image:")
-input_label.pack()
-input_path_entry = tk.Entry(root, width=40)
-input_path_entry.pack()
-browse_input_button = tk.Button(root, text="Browse", command=browse_input_file)
-browse_input_button.pack()
+# Input File Selection
+tk.Label(root, text="Input Image:").grid(row=0, column=0, sticky=tk.W)
+input_entry = tk.Entry(root, width=50)
+input_entry.grid(row=0, column=1)
+tk.Button(root, text="Browse", command=lambda: browse_file(input_entry)).grid(row=0, column=2)
 
-output_label = tk.Label(root, text="Output Directory:")
-output_label.pack()
-output_path_entry = tk.Entry(root, width=40)
-output_path_entry.pack()
-browse_output_button = tk.Button(root, text="Browse", command=browse_output_directory)
-browse_output_button.pack()
+# Output Folder Selection
+tk.Label(root, text="Output Folder:").grid(row=1, column=0, sticky=tk.W)
+output_entry = tk.Entry(root, width=50)
+output_entry.grid(row=1, column=1)
+tk.Button(root, text="Browse", command=lambda: browse_folder(output_entry)).grid(row=1, column=2)
 
-output_name_label = tk.Label(root, text="Output Image Name:")
-output_name_label.pack()
-output_name_entry = tk.Entry(root, width=40)
-output_name_entry.pack()
+# Output Image Name
+tk.Label(root, text="Output Image Name:").grid(row=2, column=0, sticky=tk.W)
+output_name_entry = tk.Entry(root, width=50)
+output_name_entry.grid(row=2, column=1)
 
-resolution_label = tk.Label(root, text="Output Resolution:")
-resolution_label.pack()
-target_width_entry = tk.Entry(root, width=10)
-target_width_entry.pack(side=tk.LEFT)
-x_label = tk.Label(root, text="x")
-x_label.pack(side=tk.LEFT)
-target_height_entry = tk.Entry(root, width=10)
-target_height_entry.pack(side=tk.LEFT)
+# Resolution Fields
+tk.Label(root, text="Width:").grid(row=3, column=0, sticky=tk.W)
+width_entry = tk.Entry(root, width=10)
+width_entry.grid(row=3, column=1, sticky=tk.W)
 
-upscale_button = tk.Button(root, text="Upscale Image", command=upscale_button_clicked)
-upscale_button.pack()
+tk.Label(root, text="Height:").grid(row=4, column=0, sticky=tk.W)
+height_entry = tk.Entry(root, width=10)
+height_entry.grid(row=4, column=1, sticky=tk.W)
 
-result_label = tk.Label(root, text="")
-result_label.pack()
+# Upscale Button
+upscale_button = tk.Button(root, text="Upscale Image", command=lambda: upscale_image(
+    input_entry.get(), output_entry.get(), output_name_entry.get(), int(width_entry.get()), int(height_entry.get())))
+upscale_button.grid(row=5, column=1, sticky=tk.W)
 
-# Start the GUI main loop
 root.mainloop()
