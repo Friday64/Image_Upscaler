@@ -1,16 +1,34 @@
+import os
 import cv2
-import os 
-import tkinter as tk
-from tkinter import Image, filedialog
-from tkinter import messagebox
 import numpy as np
+import tensorflow as tf
+import tkinter as tk
+from tkinter import filedialog, messagebox
 
-def upscale_image(input_path, output_path, output_name, new_width, new_height):
+def upscale_image_with_tensorflow(input_path, output_path, output_name, scale_factor):
+    # Load the TensorFlow model
+    model = tf.saved_model.load("C:/Users/Matthew/Desktop/FSRCNN_Tensorflow-master/models")
+
     # Read the image using OpenCV
     image = cv2.imread(input_path)
     if image is None:
         messagebox.showerror("Error", "Image not found.")
         return
+
+    # Convert BGR to RGB
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Normalize and expand image dimensions
+    image = image / 255.0
+    image = np.expand_dims(image, axis=0)
+
+    # Use the model to upscale the image
+    upscaled_image = model(image)
+
+    # Convert back to BGR and scale back pixel values
+    upscaled_image = upscaled_image.numpy().squeeze() * 255
+    upscaled_image = upscaled_image.astype(np.uint8)
+    upscaled_image = cv2.cvtColor(upscaled_image, cv2.COLOR_RGB2BGR)
 
     # Extract the extension from the input file
     _, ext = os.path.splitext(input_path)
@@ -18,23 +36,13 @@ def upscale_image(input_path, output_path, output_name, new_width, new_height):
         messagebox.showerror("Error", "Invalid file extension.")
         return
 
-    # Convert OpenCV image (BGR) to Pillow Image (RGB)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    pil_image = Image.fromarray(image)
-
-    # Upscale using LANCZOS resampling
-    upscaled_image = pil_image.resize((new_width, new_height), Image.LANCZOS)
-
-    # Convert Pillow Image (RGB) back to OpenCV image (BGR)
-    upscaled_image = cv2.cvtColor(np.array(upscaled_image), cv2.COLOR_RGB2BGR)
-
     # Construct the full output path with the same extension as the input image
     full_output_path = os.path.join(output_path, f"{output_name}{ext}")
 
     # Save the upscaled image
     cv2.imwrite(full_output_path, upscaled_image)
     messagebox.showinfo("Success", f"Image upscaled and saved to {full_output_path}")
-    
+
 def browse_file(entry):
     filename = filedialog.askopenfilename()
     entry.delete(0, tk.END)
@@ -65,18 +73,14 @@ tk.Label(root, text="Output Image Name:").grid(row=2, column=0, sticky=tk.W)
 output_name_entry = tk.Entry(root, width=50)
 output_name_entry.grid(row=2, column=1)
 
-# Resolution Fields
-tk.Label(root, text="Width:").grid(row=3, column=0, sticky=tk.W)
-width_entry = tk.Entry(root, width=10)
-width_entry.grid(row=3, column=1, sticky=tk.W)
-
-tk.Label(root, text="Height:").grid(row=4, column=0, sticky=tk.W)
-height_entry = tk.Entry(root, width=10)
-height_entry.grid(row=4, column=1, sticky=tk.W)
+# Scale Factor Field
+tk.Label(root, text="Scale Factor:").grid(row=3, column=0, sticky=tk.W)
+scale_factor_entry = tk.Entry(root, width=10)
+scale_factor_entry.grid(row=3, column=1, sticky=tk.W)
 
 # Upscale Button
-upscale_button = tk.Button(root, text="Upscale Image", command=lambda: upscale_image(
-    input_entry.get(), output_entry.get(), output_name_entry.get(), int(width_entry.get()), int(height_entry.get())))
-upscale_button.grid(row=5, column=1, sticky=tk.W)
+upscale_button = tk.Button(root, text="Upscale Image", command=lambda: upscale_image_with_tensorflow(
+    input_entry.get(), output_entry.get(), output_name_entry.get(), int(scale_factor_entry.get())))
+upscale_button.grid(row=4, column=1, sticky=tk.W)
 
 root.mainloop()
