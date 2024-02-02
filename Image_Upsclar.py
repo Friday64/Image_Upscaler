@@ -91,8 +91,8 @@ class ImageUpscaler(QWidget):
         cv2.imwrite(savePath, upscaledImage)
 
 # Uncomment these lines to run the application
-# if __name__ == '__main__':
-#     app = QApplication([])
-#     ex = ImageUpscaler()
-#     ex.show()
-#     app.exec_()
+if __name__ == '__main__':
+    app = QApplication([])
+    ex = ImageUpscaler()
+    ex.show()
+    app.exec_()
