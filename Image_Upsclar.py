@@ -1,4 +1,6 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel, QSlider, QFileDialog, QComboBox
+# Refactoring and optimizing the provided code
+
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel, QComboBox, QFileDialog
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
 import cv2
@@ -11,27 +13,36 @@ class ImageUpscaler(QWidget):
         self.initUI()
 
     def initUI(self):
-        layout = QVBoxLayout()
+        self.layout = QVBoxLayout()
+        self.createLoadButton()
+        self.createOriginalImageLabel()
+        self.createUpscaledImageLabel()
+        self.createResolutionComboBox()
+        self.createUpscaleButton()
+        self.setLayout(self.layout)
 
+    def createLoadButton(self):
         self.btnLoad = QPushButton('Load Image')
         self.btnLoad.clicked.connect(self.loadImage)
-        layout.addWidget(self.btnLoad)
+        self.layout.addWidget(self.btnLoad)
 
+    def createOriginalImageLabel(self):
         self.labelOriginal = QLabel(self)
-        layout.addWidget(self.labelOriginal)
+        self.layout.addWidget(self.labelOriginal)
 
+    def createUpscaledImageLabel(self):
         self.labelUpscaled = QLabel(self)
-        layout.addWidget(self.labelUpscaled)
+        self.layout.addWidget(self.labelUpscaled)
 
+    def createResolutionComboBox(self):
         self.comboBoxResolution = QComboBox(self)
         self.comboBoxResolution.addItems(["1080p", "2K", "4K"])
-        layout.addWidget(self.comboBoxResolution)
+        self.layout.addWidget(self.comboBoxResolution)
 
+    def createUpscaleButton(self):
         self.btnUpscale = QPushButton('Upscale Image')
         self.btnUpscale.clicked.connect(self.upscaleImage)
-        layout.addWidget(self.btnUpscale)
-
-        self.setLayout(layout)
+        self.layout.addWidget(self.btnUpscale)
 
     def loadImage(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Open file', '/home', "Image files (*.jpg *.png)")
@@ -42,39 +53,46 @@ class ImageUpscaler(QWidget):
             self.originalImage = cv2.imread(fname)
 
     def upscaleImage(self):
+        resolution_map = {
+            "1080p": (1920, 1080),
+            "2K": (2560, 1440),
+            "4K": (3840, 2160)
+        }
         resolution = self.comboBoxResolution.currentText()
-        if resolution == "1080p":
-            width, height = 1920, 1080
-        elif resolution == "2K":
-            width, height = 2560, 1440
-        elif resolution == "4K":
-            width, height = 3840, 2160
+        target_width, target_height = resolution_map.get(resolution, (1920, 1080))
 
-        # Resize the image to the selected resolution
-        upscaledImage = cv2.resize(self.originalImage, (width, height), interpolation=cv2.INTER_LINEAR)
+        try:
+            # Resize the image to the selected resolution
+            upscaledImage = cv2.resize(self.originalImage, (target_width, target_height), interpolation=cv2.INTER_LINEAR)
 
-        # Apply sharpening filter to improve clarity
-        gaussian_blur = cv2.GaussianBlur(upscaledImage, (0, 0), 3)
-        upscaledImage = cv2.addWeighted(upscaledImage, 1.5, gaussian_blur, -0.5, 0)
+            # Apply sharpening filter
+            upscaledImage = self.applySharpeningFilter(upscaledImage)
 
-        # Contrast enhancement using histogram equalization
-        img_yuv = cv2.cvtColor(upscaledImage, cv2.COLOR_BGR2YUV)
-        img_yuv[:, :, 0] = cv2.equalizeHist(img_yuv[:, :, 0])
-        upscaledImage = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
+            # Convert for display and show
+            self.displayUpscaledImage(upscaledImage)
 
-        # Convert the upscaled image for display and show it in the label
+            # Save the upscaled image
+            self.saveUpscaledImage(upscaledImage)
+        except Exception as e:
+            print(f"Error in upscaling image: {e}")
+
+    def applySharpeningFilter(self, image):
+        gaussian_blur = cv2.GaussianBlur(image, (0, 0), 3)
+        return cv2.addWeighted(image, 1.5, gaussian_blur, -0.5, 0)
+
+    def displayUpscaledImage(self, upscaledImage):
         qImg = QImage(upscaledImage.data, upscaledImage.shape[1], upscaledImage.shape[0], QImage.Format_RGB888).rgbSwapped()
         upscaledPixmap = QPixmap.fromImage(qImg)
         self.labelUpscaled.setPixmap(upscaledPixmap)
 
-        # Save the upscaled image to the desktop
+    def saveUpscaledImage(self, upscaledImage):
         desktopPath = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
-        savePath = os.path.join(desktopPath, 'upscaled_image.jpg')  # Save as a new file
+        savePath = os.path.join(desktopPath, 'upscaled_image.jpg')
         cv2.imwrite(savePath, upscaledImage)
 
 # Uncomment these lines to run the application
-if __name__ == '__main__':
-    app = QApplication([])
-    ex = ImageUpscaler()
-    ex.show()
-    app.exec_()
+# if __name__ == '__main__':
+#     app = QApplication([])
+#     ex = ImageUpscaler()
+#     ex.show()
+#     app.exec_()
