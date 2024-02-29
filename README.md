@@ -1,4 +1,6 @@
-# Image Upscaler
+# Py-Upscaler
+
+![logo](/logo.png)
 
 ## Description
 This project is an image upscaling application built with Python, utilizing PyQt5 for the graphical user interface and OpenCV for image processing tasks. The application allows users to load an image, select a desired resolution (1080p, 2K, or 4K), and upscale the image accordingly. Additionally, it applies a sharpening filter to enhance the upscaled image before saving it to the user's desktop.
