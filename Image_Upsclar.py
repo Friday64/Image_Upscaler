@@ -1,5 +1,4 @@
 # Refactoring and optimizing the provided code
-
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel, QComboBox, QFileDialog
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
